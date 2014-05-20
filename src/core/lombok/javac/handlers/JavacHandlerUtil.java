@@ -848,8 +848,9 @@ public class JavacHandlerUtil {
 	 * Can also inject constructors.
 	 * 
 	 * Also takes care of updating the JavacAST.
+	 * @return The node which was inserted into the Lombok AST.
 	 */
-	public static void injectMethod(JavacNode typeNode, JCMethodDecl method) {
+	public static JavacNode injectMethod(JavacNode typeNode, JCMethodDecl method) {
 		JCClassDecl type = (JCClassDecl) typeNode.get();
 		
 		if (method.getName().contentEquals("<init>")) {
@@ -874,7 +875,7 @@ public class JavacHandlerUtil {
 		addSuppressWarningsAll(method.mods, typeNode, method.pos, getGeneratedBy(method), typeNode.getContext());
 		type.defs = type.defs.append(method);
 		
-		typeNode.add(method, Kind.METHOD);
+		return typeNode.add(method, Kind.METHOD);
 	}
 	
 	/**
@@ -912,7 +913,7 @@ public class JavacHandlerUtil {
 		} else {
 			return chainDots(node, pos, null, null, simpleNames);
 		}
-	}
+	} 
 	
 	public static void addSuppressWarningsAll(JCModifiers mods, JavacNode node, int pos, JCTree source, Context context) {
 		if (!LombokOptionsFactory.getDelombokOptions(context).getFormatPreferences().generateSuppressWarnings()) return;
@@ -1446,4 +1447,28 @@ public class JavacHandlerUtil {
 			docComments.put(from.get(), filtered[1]);
 		}
 	}
+	
+	private static Map<String, String> BOXMAP = new HashMap<String, String>();
+	
+	static {
+		BOXMAP.put("int", "Integer");
+		BOXMAP.put("short", "Short");
+		BOXMAP.put("char", "Character");
+		BOXMAP.put("byte", "Byte");
+		BOXMAP.put("long", "Long");
+		BOXMAP.put("float", "Float");
+		BOXMAP.put("double", "Double");
+	}
+	
+	public static String box(String boxabletTypeName) {
+		boxabletTypeName = BOXMAP.get(boxabletTypeName);
+		return boxabletTypeName;
+	}
+	
+	public static JCExpression createIndetifierForNestedClass(Class<?> classToConvert, JavacNode node) {
+		String fullQualifiedClassName = classToConvert.getName().replaceAll("\\$", ".");
+		String[] parts = fullQualifiedClassName.split("\\.");
+		return chainDots(node, parts);
+	}
+
 }
